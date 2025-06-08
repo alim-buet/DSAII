@@ -6,7 +6,7 @@ void prims(vector<vector<pair<int, int>>> &graph, vector<pair<int, int>> &ans, v
     priority_queue<pair<int, pair<int, int>>, vector<pair<int, pair<int, int>>>, greater<pair<int, pair<int, int>>>> minpq;
     // priority_queue stores: {weight, {parent, node}}
 
-    minpq.push({0, {-1, 0}}); // starting from node 0
+    minpq.push({0, {-1, 0}}); 
 
     while (!minpq.empty())
     {
@@ -27,8 +27,11 @@ void prims(vector<vector<pair<int, int>>> &graph, vector<pair<int, int>> &ans, v
             totalweight += wt;
         }
 
-        for (auto &[nbr, edgeWt] : graph[node])
+        for (auto it = graph[node].begin(); it != graph[node].end(); ++it)
         {
+            int nbr = it->first;
+            int edgeWt = it->second;
+
             if (!visited[nbr])
             {
                 minpq.push({edgeWt, {node, nbr}});
