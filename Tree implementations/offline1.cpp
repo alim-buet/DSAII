@@ -1,4 +1,3 @@
-// include the color.hpp file
 #include "color.hpp"
 #include <sstream>
 #include <string>
@@ -224,7 +223,6 @@ public:
         x->color = 1;
     }
 
-    
     void deleteFromTree(int id)
     {
         Node *z = root;
@@ -239,10 +237,10 @@ public:
         }
 
         if (z == sentinel)
-            return; // Not found
+            return; // ivalid key. does not exist
 
         Node *y = z;
-        int yOriginalColor = y->color;
+        int prevYColor = y->color;
         Node *x;
 
         if (z->right == sentinel)
@@ -257,8 +255,8 @@ public:
         }
         else
         {
-            y = treeMaximum(z->left); 
-            yOriginalColor = y->color;
+            y = treeMaximum(z->left);
+            prevYColor = y->color;
             x = y->left;
             if (y->parent == z)
             {
@@ -272,14 +270,14 @@ public:
             }
             transplant(z, y);
             y->right = z->right;
-            y->right->parent = y;
+            y->right->parent = y
             y->color = z->color;
         }
 
         delete z;
         size--;
 
-        if (yOriginalColor == 1)
+        if (prevYColor == 1)
         {
             deleteFix(x);
         }
@@ -509,13 +507,14 @@ public:
         if (tree.size == 0)
         {
             cout << "unsuccessful" << endl;
+            outfile << "unsuccessful" << endl;
             return;
         }
-        while (!Empty())
-        {
-            tree.deleteFromTree(tree.root->id);
-        }
+        tree.deleteTree(tree.root);
+        tree.root = tree.sentinel;
+        tree.size = 0;
         cout << "successful" << endl;
+        outfile << "successful" << endl;
     }
     void ListInventory()
     {
