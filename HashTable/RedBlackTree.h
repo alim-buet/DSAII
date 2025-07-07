@@ -1,4 +1,8 @@
+#ifndef RED_BLACK_TREE_H
+#define RED_BLACK_TREE_H
+
 #include <iostream>
+#include <string>
 using namespace std;
 
 const int RED = 0;
@@ -7,13 +11,15 @@ const int BLACK = 1;
 class Node
 {
 public:
-    int key;
+    string key;
+    int value;
     int color;
     Node *left, *right, *parent;
 
-    Node(int key = 0)
+    Node(string key = "", int value = 0)
     {
         this->key = key;
+        this->value = value;
         this->color = RED;
         left = right = parent = nullptr;
     }
@@ -25,77 +31,49 @@ private:
     Node *root;
     Node *sentinel;
 
-    // Utility to perform left rotation
     void leftRotate(Node *x)
     {
-        if (x == nullptr || x->right == nullptr)
-            return; // Cannot rotate
-
         Node *y = x->right;
         x->right = y->left;
-
-        if (y->left != nullptr)
-        {
+        if (y->left != sentinel)
             y->left->parent = x;
-        }
-
         y->parent = x->parent;
-
-        if (x->parent == nullptr)
-        {
-            // x was root, so y becomes the new root
+        if (x->parent == sentinel)
             root = y;
-        }
         else if (x == x->parent->left)
-        {
             x->parent->left = y;
-        }
         else
-        {
             x->parent->right = y;
-        }
-
         y->left = x;
         x->parent = y;
     }
 
-    // Utility to perform right rotation
     void rightRotate(Node *x)
     {
         Node *y = x->left;
         x->left = y->right;
         if (y->right != sentinel)
-        {
             y->right->parent = x;
-        }
         y->parent = x->parent;
         if (x->parent == sentinel)
-        {
             root = y;
-        }
         else if (x == x->parent->right)
-        {
             x->parent->right = y;
-        }
         else
-        {
             x->parent->left = y;
-        }
         y->right = x;
         x->parent = y;
     }
 
-    // Fixing tree after insertion
     void fixInsert(Node *z)
     {
         while (z->parent->color == RED)
         {
             if (z->parent == z->parent->parent->left)
             {
-                Node *y = z->parent->parent->right; // Uncle
+                Node *y = z->parent->parent->right;
                 if (y->color == RED)
                 {
-                    // Case 1
                     z->parent->color = BLACK;
                     y->color = BLACK;
                     z->parent->parent->color = RED;
@@ -105,11 +83,9 @@ private:
                 {
                     if (z == z->parent->right)
                     {
-                        // Case 2
                         z = z->parent;
                         leftRotate(z);
                     }
-                    // Case 3
                     z->parent->color = BLACK;
                     z->parent->parent->color = RED;
                     rightRotate(z->parent->parent);
@@ -117,11 +93,9 @@ private:
             }
             else
             {
-                // Mirror case
-                Node *y = z->parent->parent->left; // Uncle
+                Node *y = z->parent->parent->left;
                 if (y->color == RED)
                 {
-                    // Case 1 mirror
                     z->parent->color = BLACK;
                     y->color = BLACK;
                     z->parent->parent->color = RED;
@@ -131,23 +105,36 @@ private:
                 {
                     if (z == z->parent->left)
                     {
-                        // Case 2 mirror
                         z = z->parent;
                         rightRotate(z);
                     }
-                    // Case 3 mirror
                     z->parent->color = BLACK;
                     z->parent->parent->color = RED;
                     leftRotate(z->parent->parent);
                 }
             }
-            if (z == root)
-                break;
         }
         root->color = BLACK;
     }
 
-    // Fixing tree after deletion
+    void transplant(Node *u, Node *v)
+    {
+        if (u->parent == sentinel)
+            root = v;
+        else if (u == u->parent->left)
+            u->parent->left = v;
+        else
+            u->parent->right = v;
+        v->parent = u->parent;
+    }
+
+    Node *minimum(Node *node)
+    {
+        while (node->left != sentinel)
+            node = node->left;
+        return node;
+    }
+
     void fixDelete(Node *x)
     {
         while (x != root && x->color == BLACK)
@@ -185,7 +172,6 @@ private:
             }
             else
             {
-                // Mirror case
                 Node *w = x->parent->left;
                 if (w->color == RED)
                 {
@@ -194,7 +180,7 @@ private:
                     rightRotate(x->parent);
                     w = x->parent->left;
                 }
-                if (w->left->color == BLACK && w->right->color == BLACK)
+                if (w->right->color == BLACK && w->left->color == BLACK)
                 {
                     w->color = RED;
                     x = x->parent;
@@ -219,23 +205,21 @@ private:
         x->color = BLACK;
     }
 
-    // Delete all nodes (for destructor)
     void destroyTree(Node *node)
     {
-        if (node == sentinel)
+        if (node == nullptr || node == sentinel)
             return;
         destroyTree(node->left);
         destroyTree(node->right);
         delete node;
     }
 
-    // Inorder print
     void inorderHelper(Node *node)
     {
         if (node != sentinel)
         {
             inorderHelper(node->left);
-            cout << node->key << " (" << (node->color == RED ? "R" : "B") << ") ";
+            cout << node->key << ":" << node->value << " (" << (node->color == RED ? "R" : "B") << ") ";
             inorderHelper(node->right);
         }
     }
@@ -255,10 +239,10 @@ public:
         delete sentinel;
     }
 
-    void insert(int key)
+    void insert(string key, int value)
     {
-        Node *z = new Node(key);
-        z->left = z->right = sentinel;
+        Node *z = new Node(key, value);
+        z->left = z->right = z->parent = sentinel;
 
         Node *y = sentinel;
         Node *x = root;
@@ -266,41 +250,44 @@ public:
         while (x != sentinel)
         {
             y = x;
-            x = (z->key < x->key) ? x->left : x->right;
+            if (key < x->key)
+                x = x->left;
+            else if (key > x->key)
+                x = x->right;
+            else
+            {
+                x->value = value;
+                delete z;
+                return;
+            }
         }
 
         z->parent = y;
         if (y == sentinel)
-        {
             root = z;
-        }
-        else if (z->key < y->key)
-        {
+        else if (key < y->key)
             y->left = z;
-        }
         else
-        {
             y->right = z;
-        }
 
         fixInsert(z);
     }
 
-    void deleteNode(int key)
+    void deleteNode(string key)
     {
-        Node *z = root, *y, *x;
+        Node *z = root;
         while (z != sentinel && z->key != key)
-        {
             z = (key < z->key) ? z->left : z->right;
-        }
+
         if (z == sentinel)
         {
-            cout << "Key not found in the tree.\n";
+            cout << "Key \"" << key << "\" not found.\n";
             return;
         }
 
-        y = z;
+        Node *y = z;
         int yOriginalColor = y->color;
+        Node *x;
 
         if (z->left == sentinel)
         {
@@ -314,24 +301,17 @@ public:
         }
         else
         {
-            y = z->right;
-            while (y->left != sentinel)
-                y = y->left;
-
+            y = minimum(z->right);
             yOriginalColor = y->color;
             x = y->right;
-
             if (y->parent == z)
-            {
                 x->parent = y;
-            }
             else
             {
                 transplant(y, y->right);
                 y->right = z->right;
                 y->right->parent = y;
             }
-
             transplant(z, y);
             y->left = z->left;
             y->left->parent = y;
@@ -343,26 +323,53 @@ public:
             fixDelete(x);
     }
 
-    void transplant(Node *u, Node *v)
+    bool search(string key)
     {
-        if (u->parent == sentinel)
+        Node *current = root;
+        while (current != sentinel)
         {
-            root = v;
+            if (key == current->key)
+                return true;
+            else if (key < current->key)
+                current = current->left;
+            else
+                current = current->right;
         }
-        else if (u == u->parent->left)
+        return false;
+    }
+
+    int getValue(string key)
+    {
+        Node *current = root;
+        while (current != sentinel)
         {
-            u->parent->left = v;
+            if (key == current->key)
+                return current->value;
+            else if (key < current->key)
+                current = current->left;
+            else
+                current = current->right;
         }
-        else
-        {
-            u->parent->right = v;
-        }
-        v->parent = u->parent;
+        cerr << "Error: Key \"" << key << "\" not found.\n";
+        return -1;
     }
 
     void printTree()
     {
+        cout << "Tree (inorder): ";
         inorderHelper(root);
         cout << endl;
     }
+
+    bool isEmpty()
+    {
+        return root == sentinel;
+    }
+
+    void clear()
+    {
+        destroyTree(root);
+        root = sentinel;
+    }
 };
+#endif
